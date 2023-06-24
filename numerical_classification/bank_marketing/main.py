@@ -10,6 +10,8 @@ from keras import layers
 from sklearn.model_selection import train_test_split
 import pandas as pd
 
+from utils.file_util import ModelStorage
+
 # 加载数据
 data = arff.loadarff(open('dataset.arff', 'r'))
 dataframe = pd.DataFrame(data[0], dtype=np.float)  # 你的数据集的路径
@@ -56,24 +58,26 @@ for header in numeric_columns:
     feature_columns.append(numeric_col)
 # 现在我们已经定义了我们的特征列，我们可以构建我们的模型。
 model = tf.keras.Sequential([
-    # DenseFeatures(feature_columns),
     layers.Dense(128, input_dim=train_x.shape[1], activation='relu'),
-    # layers.Dense(128, activation='relu', input_shape=(7,)),
+    layers.Dense(300, activation='relu'),
+    layers.Dropout(0.1),
     layers.Dense(128, activation='relu'),
+    layers.Dropout(0.1),
     layers.Dense(128, activation='relu'),
-    # layers.Dense(2, activation='softmax')
     layers.Dense(1, activation='sigmoid')
 ])
 
 # 我们将使用二元交叉熵作为损失函数，优化器使用Adam。
 model.compile(optimizer='adam',
-              loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
-              # loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+              # loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
+              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
 # 训练模型
 print("开始 fit ")
-model.fit(train_x, train_y, validation_split=0.2, epochs=100, batch_size=10)
+history = model.fit(train_x, train_y, validation_split=0.2, epochs=200)
 
 # 验证模型
 loss, accuracy = model.evaluate(test_x, test_y)
+
+ModelStorage.simple_save(history, model, loss, accuracy)
 print(f"loss : {loss}", "Accuracy", accuracy)
